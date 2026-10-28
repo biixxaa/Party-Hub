@@ -3,10 +3,12 @@
   "version": "1.0.0",
   "description": "Party Hub — Promotional Web Application Connecting Agents with Platform Creators",
   "scripts": {
+    "build": "npm --prefix frontend run build",
     "backend:dev": "npm --prefix backend run dev",
     "frontend:dev": "npm --prefix frontend run dev",
     "backend:build": "npm --prefix backend run build",
     "frontend:build": "npm --prefix frontend run build",
+    "backend:start": "npm --prefix backend run start",
     "seed": "npm --prefix backend run prisma:seed"
   },
   "devDependencies": {
