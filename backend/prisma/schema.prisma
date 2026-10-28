@@ -1,0 +1,241 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  AGENT
+  PLATFORM_CREATOR
+  ADMIN
+}
+
+enum VerificationStatus {
+  UNSUBMITTED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum SubscriptionType {
+  AGENT_PREMIUM
+  CREATOR_PREMIUM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentPurpose {
+  AGENT_PREMIUM
+  CREATOR_PREMIUM
+  POST_BOOST
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum BoostStatus {
+  ACTIVE
+  EXPIRED
+}
+
+enum ContactTicketStatus {
+  OPEN
+  RESOLVED
+}
+
+model User {
+  id                  String             @id @default(uuid())
+  email               String             @unique
+  passwordHash        String
+  fullName            String
+  role                Role
+  bio                 String?
+  avatarUrl           String?
+  verificationStatus  VerificationStatus @default(UNSUBMITTED)
+  agencyCenter        String?
+  platformId          String?
+  superLevel          String?
+  workedApp           String?            // Past live streaming or agency app worked on (e.g. Bigo, Poppo, TikTok Live)
+  workedAppId         String?            // User ID on the worked app
+  experienceLevel     String?            // Admin-evaluated rating: Level A, Level B, Level C, or Level D
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  // Verifications
+  verifications       VerificationSubmission[]
+
+  // Subscriptions & Payments
+  subscriptions       Subscription[]
+  payments            Payments[]
+
+  // Creator Posts
+  posts               Post[]
+
+  // Agent Engagements
+  likes               PostLike[]
+  views               PostView[]
+
+  // Agent Follows
+  followers           Follow[]           @relation("UserFollowers")
+  following           Follow[]           @relation("UserFollowing")
+
+  // Private Messaging
+  sentMessages        Message[]          @relation("SentMessages")
+  receivedMessages    Message[]          @relation("ReceivedMessages")
+
+  // Contact Admin
+  contactTickets      ContactAdminTicket[]
+}
+
+model VerificationSubmission {
+  id                 String             @id @default(uuid())
+  userId             String
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  screenshotPath     String?            // Private path on server (optional proof screenshot)
+  platformId         String?            // Shared App/Platform ID for Admin direct messaging
+  agencyCenter       String?            // Agency Center name or code
+  superLevel         String?            // Host Super Level / Tier
+  workedApp          String?            // Mention which app they worked on
+  workedAppId        String?            // Mention their ID on that app
+  pastExperience     String?            // Detailed summary of past agency/streaming experience
+  experienceLevel    String?            // Admin-assigned level rating: A, B, C, or D
+  notes              String?            // User verification instructions / remarks
+  adminDirectMessage String?            // Message / challenge code sent by Admin to user's ID
+  adminMessageSentAt DateTime?          // Timestamp when Admin messaged the user's ID
+  status             VerificationStatus @default(PENDING)
+  rejectionReason    String?
+  reviewedAt         DateTime?
+  reviewedBy         String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+}
+
+model Subscription {
+  id             String             @id @default(uuid())
+  userId         String
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           SubscriptionType
+  status         SubscriptionStatus @default(ACTIVE)
+  pricePaid      Float              // $50 for Agent, $100 for Creator
+  startDate      DateTime           @default(now())
+  expirationDate DateTime           // 7 days from activation
+  paymentId      String?            @unique
+  payment        Payments?          @relation(fields: [paymentId], references: [id])
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}
+
+model Payments {
+  id            String         @id @default(uuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount        Float
+  currency      String         @default("USD")
+  purpose       PaymentPurpose
+  status        PaymentStatus  @default(COMPLETED)
+  transactionId String         @unique
+  paymentMethod String         @default("Card")
+  referenceId   String?        // postId for boosts, etc.
+  createdAt     DateTime       @default(now())
+  subscription  Subscription?
+  boost         PostBoost?
+}
+
+model Post {
+  id               String       @id @default(uuid())
+  creatorId        String
+  creator          User         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  platformName     String
+  title            String
+  description      String
+  destinationLink  String
+  imageUrl         String?
+  isPublished      Boolean      @default(true)
+  viewCount        Int          @default(0)
+  likeCount        Int          @default(0)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  likes            PostLike[]
+  views            PostView[]
+  boosts           PostBoost[]
+}
+
+model PostBoost {
+  id             String      @id @default(uuid())
+  postId         String
+  post           Post        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  status         BoostStatus @default(ACTIVE)
+  pricePaid      Float       @default(50.0) // $50 USD per post per 24 hours
+  startTime      DateTime    @default(now())
+  expirationTime DateTime    // Exactly 24 hours from activation
+  paymentId      String      @unique
+  payment        Payments    @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  createdAt      DateTime    @default(now())
+}
+
+model PostLike {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+}
+
+model PostView {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  ipAddress String?
+  createdAt DateTime @default(now())
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  follower    User     @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  content    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model ContactAdminTicket {
+  id          String              @id @default(uuid())
+  userId      String
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject     String
+  message     String
+  status      ContactTicketStatus @default(OPEN)
+  adminReply  String?
+  repliedAt   DateTime?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
