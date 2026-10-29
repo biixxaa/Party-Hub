@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { Sparkles, Lock, Mail, ArrowRight, ShieldAlert, CheckCircle2, UserCheck, Flame } from 'lucide-react';
+import { Sparkles, Lock, Mail, ArrowRight, ShieldAlert } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -43,12 +43,6 @@ export const Login: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Quick 1-click demo login helper
-  const fillDemoAccount = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
   };
 
   return (
@@ -119,74 +113,6 @@ export const Login: React.FC = () => {
               )}
             </button>
           </form>
-
-          {/* Quick Demo Logins Section */}
-          <div className="mt-8 pt-6 border-t border-white/10">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 text-center">
-              Quick Role Test Logins
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => fillDemoAccount('admin@partyhub.com', 'admin123')}
-                className="p-2 rounded-xl bg-red-950/40 border border-red-500/30 text-red-300 hover:bg-red-900/40 transition-colors text-left flex items-center gap-2"
-              >
-                <ShieldAlert className="w-4 h-4 text-red-400" />
-                <div>
-                  <div className="font-semibold">Admin</div>
-                  <div className="text-[10px] text-gray-400">admin@partyhub.com</div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fillDemoAccount('agent.sarah@partyhub.com', 'password123')}
-                className="p-2 rounded-xl bg-purple-950/40 border border-purple-500/30 text-purple-300 hover:bg-purple-900/40 transition-colors text-left flex items-center gap-2"
-              >
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <div>
-                  <div className="font-semibold">VIP Agent</div>
-                  <div className="text-[10px] text-gray-400">agent.sarah@...</div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fillDemoAccount('agent.leo@partyhub.com', 'password123')}
-                className="p-2 rounded-xl bg-purple-950/40 border border-purple-500/30 text-purple-300 hover:bg-purple-900/40 transition-colors text-left flex items-center gap-2"
-              >
-                <CheckCircle2 className="w-4 h-4 text-purple-400" />
-                <div>
-                  <div className="font-semibold">Agent (Leo)</div>
-                  <div className="text-[10px] text-gray-400">agent.leo@...</div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fillDemoAccount('creator.alex@partyhub.com', 'password123')}
-                className="p-2 rounded-xl bg-pink-950/40 border border-pink-500/30 text-pink-300 hover:bg-pink-900/40 transition-colors text-left flex items-center gap-2"
-              >
-                <Flame className="w-4 h-4 text-pink-400" />
-                <div>
-                  <div className="font-semibold">Creator Pro</div>
-                  <div className="text-[10px] text-gray-400">creator.alex@...</div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fillDemoAccount('agent.pending@partyhub.com', 'password123')}
-                className="p-2 rounded-xl bg-amber-950/40 border border-amber-500/30 text-amber-300 hover:bg-amber-900/40 transition-colors text-left flex items-center gap-2"
-              >
-                <UserCheck className="w-4 h-4 text-amber-400" />
-                <div>
-                  <div className="font-semibold">Pending Agent</div>
-                  <div className="text-[10px] text-gray-400">agent.pending@...</div>
-                </div>
-              </button>
-            </div>
-          </div>
 
           <div className="mt-6 text-center text-xs text-gray-400">
             Don't have an account yet?{' '}
