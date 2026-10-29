@@ -204,3 +204,4 @@ export async function initializeDatabase(): Promise<{ tableCount: number; userCo
   console.log(`[DB Init] Initialized successfully. Total users: ${userCount}`);
   return { tableCount: 11, userCount };
 }
+
