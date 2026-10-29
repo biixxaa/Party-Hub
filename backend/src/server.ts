@@ -6,6 +6,7 @@ import { exec } from 'child_process';
 import prisma from './prisma';
 import { postsDir } from './middleware/upload';
 import { seedDatabase } from './seed';
+import { initializeDatabase } from './initDb';
 
 // Route imports
 import authRoutes from './routes/auth.routes';
@@ -95,41 +96,19 @@ app.get(['/api/health', '/health'], async (_req, res) => {
 // Safe database setup & seed endpoint (accessible via browser or API)
 app.all(['/api/setup-database', '/setup-database'], async (_req, res) => {
   try {
-    console.log('[Setup] Running prisma db push to ensure schema tables exist...');
-    exec('npx prisma db push --accept-data-loss', { env: process.env }, async (error, stdout, stderr) => {
-      if (error) {
-        console.error('[Setup Error] prisma db push failed:', stderr || error.message);
-        res.status(500).json({
-          success: false,
-          stage: 'prisma db push',
-          error: error.message,
-          output: stderr || stdout,
-        });
-        return;
-      }
-
-      console.log('[Setup] Schema synchronized successfully. Seeding initial accounts...');
-      try {
-        await seedDatabase();
-        const userCount = await prisma.user.count();
-        res.json({
-          success: true,
-          message: 'Database tables created and demo accounts seeded successfully!',
-          userCount,
-          output: stdout,
-        });
-      } catch (seedErr: any) {
-        console.error('[Setup Error] Seeding failed:', seedErr);
-        res.status(500).json({
-          success: false,
-          stage: 'seed',
-          error: seedErr.message || 'Seeding failed',
-          output: stdout,
-        });
-      }
+    console.log('[Setup] Initializing database tables and seed data...');
+    const result = await initializeDatabase();
+    res.json({
+      success: true,
+      message: 'Database tables created and demo accounts seeded successfully!',
+      ...result,
     });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    console.error('[Setup Error] Failed to initialize database:', err);
+    res.status(500).json({
+      success: false,
+      error: err.message || 'Database initialization error',
+    });
   }
 });
 
@@ -153,8 +132,31 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
   });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Party Hub Backend Server listening on http://localhost:${PORT}`);
+
+  // Automatically check if database tables exist and initialize if empty
+  try {
+    const userCount = await prisma.user.count();
+    if (userCount === 0) {
+      console.log('[Auto-Init] Database is empty. Seeding accounts...');
+      await seedDatabase();
+    } else {
+      console.log(`[Auto-Init] Database connected. Found ${userCount} users.`);
+    }
+  } catch (err: any) {
+    if (err.message?.includes('does not exist') || err.message?.includes('relation')) {
+      console.log('[Auto-Init] Database tables not found. Automatically creating tables and seeding...');
+      try {
+        await initializeDatabase();
+        console.log('[Auto-Init] Tables and seed data created successfully on boot!');
+      } catch (initErr: any) {
+        console.error('[Auto-Init Error] Failed to create tables on boot:', initErr.message);
+      }
+    } else {
+      console.warn('[Auto-Init Notice] Database check deferred:', err.message);
+    }
+  }
 });
 
 export default app;

@@ -6,10 +6,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const child_process_1 = require("child_process");
 const prisma_1 = __importDefault(require("./prisma"));
 const upload_1 = require("./middleware/upload");
 const seed_1 = require("./seed");
+const initDb_1 = require("./initDb");
 // Route imports
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const verification_routes_1 = __importDefault(require("./routes/verification.routes"));
@@ -88,42 +88,20 @@ app.get(['/api/health', '/health'], async (_req, res) => {
 // Safe database setup & seed endpoint (accessible via browser or API)
 app.all(['/api/setup-database', '/setup-database'], async (_req, res) => {
     try {
-        console.log('[Setup] Running prisma db push to ensure schema tables exist...');
-        (0, child_process_1.exec)('npx prisma db push --accept-data-loss', { env: process.env }, async (error, stdout, stderr) => {
-            if (error) {
-                console.error('[Setup Error] prisma db push failed:', stderr || error.message);
-                res.status(500).json({
-                    success: false,
-                    stage: 'prisma db push',
-                    error: error.message,
-                    output: stderr || stdout,
-                });
-                return;
-            }
-            console.log('[Setup] Schema synchronized successfully. Seeding initial accounts...');
-            try {
-                await (0, seed_1.seedDatabase)();
-                const userCount = await prisma_1.default.user.count();
-                res.json({
-                    success: true,
-                    message: 'Database tables created and demo accounts seeded successfully!',
-                    userCount,
-                    output: stdout,
-                });
-            }
-            catch (seedErr) {
-                console.error('[Setup Error] Seeding failed:', seedErr);
-                res.status(500).json({
-                    success: false,
-                    stage: 'seed',
-                    error: seedErr.message || 'Seeding failed',
-                    output: stdout,
-                });
-            }
+        console.log('[Setup] Initializing database tables and seed data...');
+        const result = await (0, initDb_1.initializeDatabase)();
+        res.json({
+            success: true,
+            message: 'Database tables created and demo accounts seeded successfully!',
+            ...result,
         });
     }
     catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+        console.error('[Setup Error] Failed to initialize database:', err);
+        res.status(500).json({
+            success: false,
+            error: err.message || 'Database initialization error',
+        });
     }
 });
 // Root welcome & status endpoint
@@ -144,7 +122,33 @@ app.use((err, _req, res, _next) => {
         error: err.message || 'Internal server error occurred.',
     });
 });
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     console.log(`Party Hub Backend Server listening on http://localhost:${PORT}`);
+    // Automatically check if database tables exist and initialize if empty
+    try {
+        const userCount = await prisma_1.default.user.count();
+        if (userCount === 0) {
+            console.log('[Auto-Init] Database is empty. Seeding accounts...');
+            await (0, seed_1.seedDatabase)();
+        }
+        else {
+            console.log(`[Auto-Init] Database connected. Found ${userCount} users.`);
+        }
+    }
+    catch (err) {
+        if (err.message?.includes('does not exist') || err.message?.includes('relation')) {
+            console.log('[Auto-Init] Database tables not found. Automatically creating tables and seeding...');
+            try {
+                await (0, initDb_1.initializeDatabase)();
+                console.log('[Auto-Init] Tables and seed data created successfully on boot!');
+            }
+            catch (initErr) {
+                console.error('[Auto-Init Error] Failed to create tables on boot:', initErr.message);
+            }
+        }
+        else {
+            console.warn('[Auto-Init Notice] Database check deferred:', err.message);
+        }
+    }
 });
 exports.default = app;
