@@ -7,8 +7,8 @@ export const requireApprovedVerification = (req: AuthRequest, res: Response, nex
     return;
   }
 
-  // Admins bypass normal user identity verification requirements
-  if (req.user.role === 'ADMIN') {
+  // Admins and Platform Creators bypass identity verification requirements
+  if (req.user.role === 'ADMIN' || req.user.role === 'PLATFORM_CREATOR') {
     next();
     return;
   }

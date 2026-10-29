@@ -47,7 +47,6 @@ export const ManagePosts: React.FC = () => {
   const [formError, setFormError] = useState<string | null>(null);
 
   const isCreatorPremium = hasActiveSubscription('CREATOR_PREMIUM');
-  const isVerified = user?.verificationStatus === 'APPROVED';
 
   // Client prohibited content check
   const titleCheck = checkProhibitedContact(title);
@@ -77,12 +76,12 @@ export const ManagePosts: React.FC = () => {
   };
 
   useEffect(() => {
-    if (isCreatorPremium && isVerified) {
+    if (isCreatorPremium) {
       fetchMyPosts();
     } else {
       setIsLoading(false);
     }
-  }, [isCreatorPremium, isVerified]);
+  }, [isCreatorPremium]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -163,36 +162,27 @@ export const ManagePosts: React.FC = () => {
     }
   };
 
-  // Guard for Unverified or Non-Premium Creators
-  if (!isVerified || !isCreatorPremium) {
+  // Guard for Non-Premium Creators
+  if (!isCreatorPremium) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center">
         <div className="glass-panel rounded-3xl p-8 sm:p-12 border-pink-500/30 shadow-2xl">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-600 to-amber-600 flex items-center justify-center text-white mx-auto mb-4 shadow-lg shadow-pink-600/30">
             <Lock className="w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-extrabold text-white">Creator Privileges Locked</h2>
+          <h2 className="text-2xl font-extrabold text-white">Creator Premium Required</h2>
           <p className="text-sm text-gray-300 mt-2 max-w-md mx-auto leading-relaxed">
-            Publishing and managing promotional posts requires both approved identity verification and an active Creator Premium subscription ($100 USD / week).
+            Publishing and managing promotional campaigns requires an active Creator Premium subscription ($100 USD / week).
           </p>
 
-          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
-            {!isVerified && (
-              <Link
-                to="/verification"
-                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-500 transition-all"
-              >
-                Complete Identity Verification
-              </Link>
-            )}
-            {!isCreatorPremium && (
-              <Link
-                to="/subscriptions"
-                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-pink-600 to-amber-500 hover:from-pink-500 hover:to-amber-400 shadow-lg shadow-pink-600/30 transition-all"
-              >
-                Activate Creator Premium ($100/wk)
-              </Link>
-            )}
+          <div className="mt-6 flex items-center justify-center">
+            <Link
+              to="/subscriptions"
+              className="px-6 py-3 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-pink-600 to-amber-500 hover:from-pink-500 hover:to-amber-400 shadow-lg shadow-pink-600/30 transition-all flex items-center gap-2"
+            >
+              <Crown className="w-4 h-4 text-amber-200" />
+              <span>Activate Creator Premium ($100/wk)</span>
+            </Link>
           </div>
         </div>
       </div>

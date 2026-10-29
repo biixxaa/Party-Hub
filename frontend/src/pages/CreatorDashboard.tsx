@@ -28,18 +28,17 @@ export const CreatorDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const isCreatorPremium = hasActiveSubscription('CREATOR_PREMIUM');
-  const isVerified = user?.verificationStatus === 'APPROVED';
 
   const activeSub = user?.activeSubscriptions?.find(s => s.type === 'CREATOR_PREMIUM' && s.status === 'ACTIVE');
 
   useEffect(() => {
     const fetchMyPosts = async () => {
-      if (isCreatorPremium && isVerified) {
+      if (isCreatorPremium) {
         try {
           const res = await api.get('/posts/my-posts');
           setMyPosts(res.data.posts || []);
         } catch (err) {
-          // If subscription or verification expired
+          // If subscription expired
         } finally {
           setIsLoading(false);
         }
@@ -49,7 +48,7 @@ export const CreatorDashboard: React.FC = () => {
     };
 
     fetchMyPosts();
-  }, [isCreatorPremium, isVerified]);
+  }, [isCreatorPremium]);
 
   // Aggregate engagement stats
   const totalViews = myPosts.reduce((acc, p) => acc + p.viewCount, 0);
@@ -65,18 +64,9 @@ export const CreatorDashboard: React.FC = () => {
             <span className="px-3 py-1 rounded-full bg-pink-950/60 border border-pink-500/30 text-pink-300 text-xs font-bold uppercase tracking-wider">
               Platform Creator Console
             </span>
-            {isVerified ? (
-              <span className="flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-medium bg-emerald-950/60 border border-emerald-500/30 text-emerald-400">
-                <CheckCircle2 className="w-3 h-3" /> Identity Verified
-              </span>
-            ) : (
-              <Link
-                to="/verification"
-                className="flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-medium bg-amber-950/60 border border-amber-500/30 text-amber-400 hover:bg-amber-900/50"
-              >
-                <Clock className="w-3 h-3" /> Status: {user?.verificationStatus}
-              </Link>
-            )}
+            <span className="flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-medium bg-emerald-950/60 border border-emerald-500/30 text-emerald-400">
+              <CheckCircle2 className="w-3 h-3" /> Ready to Broadcast
+            </span>
 
             {user?.superLevel && (
               <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-bold bg-pink-950/60 border border-pink-500/30 text-pink-300">
@@ -119,47 +109,37 @@ export const CreatorDashboard: React.FC = () => {
         )}
       </div>
 
-      {/* Verification & Subscription Status Alerts */}
+      {/* Publishing & Subscription Status Alerts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {/* Verification Card */}
+        {/* Platform Status Card */}
         <div className="glass-panel rounded-2xl p-6 border-white/10">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-pink-600/20 text-pink-400">
-                <ShieldCheck className="w-6 h-6" />
+                <Megaphone className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-bold text-white text-base">Identity Verification</h3>
-                <p className="text-xs text-gray-400 mt-0.5">Safety & platform legitimacy</p>
+                <h3 className="font-bold text-white text-base">Campaign Broadcasting</h3>
+                <p className="text-xs text-gray-400 mt-0.5">Instant Platform Access</p>
               </div>
             </div>
 
-            <span
-              className={`text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${
-                isVerified
-                  ? 'bg-emerald-950/60 border border-emerald-500/30 text-emerald-400'
-                  : 'bg-amber-950/60 border border-amber-500/30 text-amber-400'
-              }`}
-            >
-              {user?.verificationStatus}
+            <span className="text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Enabled
             </span>
           </div>
 
           <p className="text-xs text-gray-300 mt-4 leading-relaxed">
-            {isVerified
-              ? 'Your developer / platform identity has been approved by admin moderators.'
-              : 'Submit a screenshot of your platform admin console to unlock promotional publishing permissions.'}
+            Your platform creator account is enabled. Launch new promotional campaigns, boost posts for 24-hour top visibility, and reach verified agency talent.
           </p>
 
-          {!isVerified && (
-            <Link
-              to="/verification"
-              className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-pink-400 hover:text-pink-300"
-            >
-              <span>Submit Profile Screenshot</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          )}
+          <Link
+            to="/creator/posts"
+            className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-pink-400 hover:text-pink-300"
+          >
+            <span>Manage My Campaigns</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
 
         {/* Creator Premium Subscription Card */}

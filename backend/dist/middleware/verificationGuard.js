@@ -6,8 +6,8 @@ const requireApprovedVerification = (req, res, next) => {
         res.status(401).json({ error: 'Authentication required.' });
         return;
     }
-    // Admins bypass normal user identity verification requirements
-    if (req.user.role === 'ADMIN') {
+    // Admins and Platform Creators bypass identity verification requirements
+    if (req.user.role === 'ADMIN' || req.user.role === 'PLATFORM_CREATOR') {
         next();
         return;
     }

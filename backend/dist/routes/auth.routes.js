@@ -47,6 +47,7 @@ router.post('/register', async (req, res) => {
         }
         const salt = await bcryptjs_1.default.genSalt(10);
         const passwordHash = await bcryptjs_1.default.hash(password, salt);
+        const isCreator = role === 'PLATFORM_CREATOR';
         const user = await prisma_1.default.user.create({
             data: {
                 email: email.toLowerCase().trim(),
@@ -54,9 +55,11 @@ router.post('/register', async (req, res) => {
                 fullName: fullName.trim(),
                 role: role,
                 bio: bio ? bio.trim() : null,
-                platformId: platformId ? platformId.trim() : null,
-                agencyCenter: agencyCenter ? agencyCenter.trim() : null,
-                superLevel: superLevel ? superLevel.trim() : null,
+                platformId: !isCreator && platformId ? platformId.trim() : null,
+                agencyCenter: !isCreator && agencyCenter ? agencyCenter.trim() : null,
+                superLevel: !isCreator && superLevel ? superLevel.trim() : null,
+                // Platform Creators are automatically approved upon registration (no ID or admin verification needed)
+                verificationStatus: isCreator ? 'APPROVED' : 'UNSUBMITTED',
             },
             select: {
                 id: true,
