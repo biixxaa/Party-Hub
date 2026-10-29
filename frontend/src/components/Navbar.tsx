@@ -108,9 +108,21 @@ export const Navbar: React.FC = () => {
             {isAuthenticated && (
               <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
                 <Link
+                  to="/"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${
+                    isActive('/') || isActive('/mission') || isActive('/overview')
+                      ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
+                      : 'text-gray-300 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4 text-pink-400" />
+                  Mission
+                </Link>
+
+                <Link
                   to="/feed"
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${
-                    isActive('/feed') || isActive('/')
+                    isActive('/feed')
                       ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
                       : 'text-gray-300 hover:text-white hover:bg-white/5'
                   }`}
@@ -261,6 +273,13 @@ export const Navbar: React.FC = () => {
               </div>
             ) : (
               <div className="flex items-center gap-2">
+                <Link
+                  to="/"
+                  className="px-3 py-2 text-sm font-medium text-gray-300 hover:text-white rounded-lg transition-colors hidden sm:inline-flex items-center gap-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-pink-400" />
+                  Mission
+                </Link>
                 <Link
                   to="/login"
                   className="px-4 py-2 text-sm font-medium text-gray-200 hover:text-white rounded-lg transition-colors"

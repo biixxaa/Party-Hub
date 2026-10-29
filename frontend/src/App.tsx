@@ -18,6 +18,7 @@ import { MessagingPage } from './pages/MessagingPage';
 import { SubscriptionsPage } from './pages/SubscriptionsPage';
 import { ContactAdminPage } from './pages/ContactAdminPage';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { HomeMissionDashboard } from './pages/HomeMissionDashboard';
 
 export const App: React.FC = () => {
   return (
@@ -28,18 +29,13 @@ export const App: React.FC = () => {
           <main className="flex-1">
             <Routes>
               {/* Public Routes */}
+              <Route path="/" element={<HomeMissionDashboard />} />
+              <Route path="/mission" element={<HomeMissionDashboard />} />
+              <Route path="/overview" element={<HomeMissionDashboard />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
 
               {/* Protected Routes */}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Feed />
-                  </ProtectedRoute>
-                }
-              />
               <Route
                 path="/feed"
                 element={
