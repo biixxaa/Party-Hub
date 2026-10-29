@@ -42,7 +42,17 @@ app.use('/api/admin', admin_routes_1.default);
 app.get('/api/health', (_req, res) => {
     res.json({
         status: 'ok',
+        message: 'Party Hub API is running',
         service: 'Party Hub API',
+        timestamp: new Date().toISOString(),
+    });
+});
+// Root welcome & status endpoint
+app.get('/', (_req, res) => {
+    res.json({
+        status: 'ok',
+        message: 'Party Hub API is running',
+        healthCheck: '/api/health',
         timestamp: new Date().toISOString(),
     });
 });
