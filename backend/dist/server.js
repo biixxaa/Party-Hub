@@ -6,8 +6,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const child_process_1 = require("child_process");
 const prisma_1 = __importDefault(require("./prisma"));
 const upload_1 = require("./middleware/upload");
+const seed_1 = require("./seed");
 // Route imports
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const verification_routes_1 = __importDefault(require("./routes/verification.routes"));
@@ -44,17 +46,23 @@ app.use(express_1.default.urlencoded({ extended: true }));
 // Serve ONLY promotional post images publicly
 // NOTE: Verification screenshots are protected and NOT mounted as static files!
 app.use('/uploads/posts', express_1.default.static(upload_1.postsDir));
-// API Routes
-app.use('/api/auth', auth_routes_1.default);
-app.use('/api/verification', verification_routes_1.default);
-app.use('/api/posts', posts_routes_1.default);
-app.use('/api/payments', payments_routes_1.default);
-app.use('/api/agents', agents_routes_1.default);
-app.use('/api/messages', messages_routes_1.default);
-app.use('/api/contact-admin', contact_routes_1.default);
-app.use('/api/admin', admin_routes_1.default);
-// Health check endpoint
-app.get('/api/health', async (_req, res) => {
+// API Routes - Mounted under both /api/... and /... for maximum client compatibility
+const apiRoutes = [
+    { path: 'auth', router: auth_routes_1.default },
+    { path: 'verification', router: verification_routes_1.default },
+    { path: 'posts', router: posts_routes_1.default },
+    { path: 'payments', router: payments_routes_1.default },
+    { path: 'agents', router: agents_routes_1.default },
+    { path: 'messages', router: messages_routes_1.default },
+    { path: 'contact-admin', router: contact_routes_1.default },
+    { path: 'admin', router: admin_routes_1.default },
+];
+for (const route of apiRoutes) {
+    app.use(`/api/${route.path}`, route.router);
+    app.use(`/${route.path}`, route.router);
+}
+// Health check endpoint (accessible at /api/health and /health)
+app.get(['/api/health', '/health'], async (_req, res) => {
     let dbStatus = 'disconnected';
     let userCount = 0;
     let dbError = null;
@@ -77,12 +85,54 @@ app.get('/api/health', async (_req, res) => {
         timestamp: new Date().toISOString(),
     });
 });
+// Safe database setup & seed endpoint (accessible via browser or API)
+app.all(['/api/setup-database', '/setup-database'], async (_req, res) => {
+    try {
+        console.log('[Setup] Running prisma db push to ensure schema tables exist...');
+        (0, child_process_1.exec)('npx prisma db push --accept-data-loss', { env: process.env }, async (error, stdout, stderr) => {
+            if (error) {
+                console.error('[Setup Error] prisma db push failed:', stderr || error.message);
+                res.status(500).json({
+                    success: false,
+                    stage: 'prisma db push',
+                    error: error.message,
+                    output: stderr || stdout,
+                });
+                return;
+            }
+            console.log('[Setup] Schema synchronized successfully. Seeding initial accounts...');
+            try {
+                await (0, seed_1.seedDatabase)();
+                const userCount = await prisma_1.default.user.count();
+                res.json({
+                    success: true,
+                    message: 'Database tables created and demo accounts seeded successfully!',
+                    userCount,
+                    output: stdout,
+                });
+            }
+            catch (seedErr) {
+                console.error('[Setup Error] Seeding failed:', seedErr);
+                res.status(500).json({
+                    success: false,
+                    stage: 'seed',
+                    error: seedErr.message || 'Seeding failed',
+                    output: stdout,
+                });
+            }
+        });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
 // Root welcome & status endpoint
 app.get('/', (_req, res) => {
     res.json({
         status: 'ok',
         message: 'Party Hub API is running',
         healthCheck: '/api/health',
+        setupDatabase: '/api/setup-database',
         timestamp: new Date().toISOString(),
     });
 });

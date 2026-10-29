@@ -4,7 +4,7 @@ import path from 'path';
 import prisma from './prisma';
 import { verificationsDir, postsDir } from './middleware/upload';
 
-async function main() {
+export async function seedDatabase() {
   console.log('--- Starting Party Hub Database Seeder ---');
 
   // Ensure directories exist
@@ -332,11 +332,14 @@ async function main() {
   console.log('--- Seed Data Successfully Inserted ---');
 }
 
-main()
-  .catch((e) => {
-    console.error('Seed Error:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+// Execute immediately when invoked directly as a script
+if (process.argv[1]?.includes('seed')) {
+  seedDatabase()
+    .catch((e) => {
+      console.error('Seed Error:', e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}

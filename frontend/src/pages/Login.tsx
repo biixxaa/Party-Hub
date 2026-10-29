@@ -30,7 +30,16 @@ export const Login: React.FC = () => {
         navigate('/creator/dashboard');
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid credentials. Please try again.');
+      const serverMsg = err.response?.data?.error;
+      if (serverMsg) {
+        setError(serverMsg);
+      } else if (!err.response) {
+        setError('Unable to reach server. Please check your connection and try again.');
+      } else if (err.response.status === 404) {
+        setError('API endpoint not found (404). Please verify service configuration.');
+      } else {
+        setError('Invalid credentials. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

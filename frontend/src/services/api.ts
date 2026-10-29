@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+// Resolve API base URL: ensure it always ends with /api
+const rawApiUrl = ((import.meta as any).env?.VITE_API_URL || '/api').trim();
+const cleanUrl = rawApiUrl.replace(/\/+$/, '');
+const baseURL = cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+
 const api = axios.create({
-  baseURL: (import.meta as any).env?.VITE_API_URL || '/api',
+  baseURL,
 });
 
 // Attach JWT token to requests if available

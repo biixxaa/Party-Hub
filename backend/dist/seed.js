@@ -3,12 +3,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.seedDatabase = seedDatabase;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const prisma_1 = __importDefault(require("./prisma"));
 const upload_1 = require("./middleware/upload");
-async function main() {
+async function seedDatabase() {
     console.log('--- Starting Party Hub Database Seeder ---');
     // Ensure directories exist
     if (!fs_1.default.existsSync(upload_1.verificationsDir))
@@ -311,11 +312,14 @@ async function main() {
     });
     console.log('--- Seed Data Successfully Inserted ---');
 }
-main()
-    .catch((e) => {
-    console.error('Seed Error:', e);
-    process.exit(1);
-})
-    .finally(async () => {
-    await prisma_1.default.$disconnect();
-});
+// Execute immediately when invoked directly as a script
+if (process.argv[1]?.includes('seed')) {
+    seedDatabase()
+        .catch((e) => {
+        console.error('Seed Error:', e);
+        process.exit(1);
+    })
+        .finally(async () => {
+        await prisma_1.default.$disconnect();
+    });
+}
