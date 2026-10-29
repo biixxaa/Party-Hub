@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const prisma_1 = __importDefault(require("./prisma"));
 const upload_1 = require("./middleware/upload");
 // Route imports
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
@@ -53,10 +54,25 @@ app.use('/api/messages', messages_routes_1.default);
 app.use('/api/contact-admin', contact_routes_1.default);
 app.use('/api/admin', admin_routes_1.default);
 // Health check endpoint
-app.get('/api/health', (_req, res) => {
+app.get('/api/health', async (_req, res) => {
+    let dbStatus = 'disconnected';
+    let userCount = 0;
+    let dbError = null;
+    try {
+        userCount = await prisma_1.default.user.count();
+        dbStatus = 'connected';
+    }
+    catch (err) {
+        dbError = err.message || 'Database connection error';
+    }
     res.json({
         status: 'ok',
         message: 'Party Hub API is running',
+        database: {
+            status: dbStatus,
+            userCount,
+            error: dbError,
+        },
         service: 'Party Hub API',
         timestamp: new Date().toISOString(),
     });

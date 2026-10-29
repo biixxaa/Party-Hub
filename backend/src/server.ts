@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import prisma from './prisma';
 import { postsDir } from './middleware/upload';
 
 // Route imports
@@ -57,10 +58,26 @@ app.use('/api/contact-admin', contactRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Health check endpoint
-app.get('/api/health', (_req, res) => {
+app.get('/api/health', async (_req, res) => {
+  let dbStatus = 'disconnected';
+  let userCount = 0;
+  let dbError: string | null = null;
+
+  try {
+    userCount = await prisma.user.count();
+    dbStatus = 'connected';
+  } catch (err: any) {
+    dbError = err.message || 'Database connection error';
+  }
+
   res.json({
     status: 'ok',
     message: 'Party Hub API is running',
+    database: {
+      status: dbStatus,
+      userCount,
+      error: dbError,
+    },
     service: 'Party Hub API',
     timestamp: new Date().toISOString(),
   });
